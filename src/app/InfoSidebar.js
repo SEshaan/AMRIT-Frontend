@@ -36,17 +36,30 @@ const RiskBadge = ({ level }) => {
 const InfoSidebar = ({ point, isLoading, isOpen, onOpenChange }) => {
   const renderContent = () => {
     if (isLoading) {
-      return <div className="p-4">Loading details...</div>;
+      return (
+        <div className="p-6 flex justify-center items-center h-full">
+          <div className="flex items-center text-muted-foreground">
+            <svg className="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span>Loading details...</span>
+          </div>
+        </div>
+      );
     }
 
     if (!point) {
-      return <div className="p-4">No data available.</div>;
+      return <div className="p-6 text-center text-muted-foreground">No data available.</div>;
     }
 
-    const { location, environmentalParams, pollutionIndices } = point;
+    // The data from the API is the 'point' object itself.
+    // The data from a direct click on the map might be nested under 'properties'.
+    // We check for `point.properties` and use it, otherwise, we use the point object directly.
+    const properties = point.properties ? point.properties : point;
 
     return (
-      <div className="p-4 space-y-4">
+      <div className="p-6 space-y-4">
         <Card>
           <CardHeader>
             <CardTitle>Overall Assessment</CardTitle>
@@ -54,12 +67,12 @@ const InfoSidebar = ({ point, isLoading, isOpen, onOpenChange }) => {
           <CardContent className="space-y-2">
             <div className="flex justify-between items-center">
               <span className="font-semibold">Risk Level</span>
-              <RiskBadge level={pollutionIndices.overallAssessment.riskLevel} />
+              <RiskBadge level={properties.pollutionIndices?.overallAssessment?.riskLevel} />
             </div>
             <div>
               <h4 className="font-semibold mt-2 mb-1">Recommendations:</h4>
               <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
-                {pollutionIndices.overallAssessment.recommendations.map((rec, i) => <li key={i}>{rec}</li>)}
+                {properties.pollutionIndices?.overallAssessment?.recommendations.map((rec, i) => <li key={i}>{rec}</li>)}
               </ul>
             </div>
           </CardContent>
@@ -69,7 +82,7 @@ const InfoSidebar = ({ point, isLoading, isOpen, onOpenChange }) => {
           <AccordionItem value="pollution-indices">
             <AccordionTrigger>Pollution Indices</AccordionTrigger>
             <AccordionContent>
-              {Object.entries(pollutionIndices).map(([key, data]) => {
+              {Object.entries(properties.pollutionIndices || {}).map(([key, data]) => {
                 if (key === 'overallAssessment' || key === 'metalAnalysis') return null;
                 return (
                   <DataRow key={key} label={key.replace(/([A-Z])/g, ' $1').toUpperCase()} value={data.value?.toFixed(2) || 'N/A'} />
@@ -81,7 +94,7 @@ const InfoSidebar = ({ point, isLoading, isOpen, onOpenChange }) => {
           <AccordionItem value="env-params">
             <AccordionTrigger>Environmental Parameters</AccordionTrigger>
             <AccordionContent>
-              {Object.entries(environmentalParams).map(([key, data]) => (
+              {Object.entries(properties.environmentalParams || {}).map(([key, data]) => (
                 <DataRow key={key} label={key.replace(' (µS/cm at', '')} value={data.value} unit={data.unit} />
               ))}
             </AccordionContent>
@@ -91,7 +104,7 @@ const InfoSidebar = ({ point, isLoading, isOpen, onOpenChange }) => {
             <AccordionTrigger>Metal Analysis</AccordionTrigger>
             <AccordionContent>
               <h4 className="font-semibold mb-2">Contamination Factors</h4>
-              {Object.entries(pollutionIndices.metalAnalysis.contaminationFactors).map(([metal, data]) => (
+              {Object.entries(properties.pollutionIndices?.metalAnalysis?.contaminationFactors || {}).map(([metal, data]) => (
                 <DataRow key={metal} label={metal} value={data.value.toFixed(2)} unit={`(${data.interpretation.category})`} />
               ))}
             </AccordionContent>
@@ -105,9 +118,9 @@ const InfoSidebar = ({ point, isLoading, isOpen, onOpenChange }) => {
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
       <SheetContent className="overflow-y-auto w-full sm:max-w-md">
         <SheetHeader>
-          <SheetTitle>{point?.location?.name || 'Location Details'}</SheetTitle>
+          <SheetTitle>{point?.properties?.location || point?.location?.name || 'Location Details'}</SheetTitle>
           <SheetDescription>
-            {point ? `${point.location.district}, ${point.location.state}` : 'Detailed water quality analysis.'}
+            {point?.location ? `${point.location.district}, ${point.location.state}` : 'Detailed water quality analysis.'}
           </SheetDescription>
         </SheetHeader>
         {renderContent()}

@@ -1,5 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import Sidebar from "../../Sidebar";
+import { Toaster } from "@/components/ui/sonner.jsx";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,11 +20,14 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+    <html lang="en"><body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased theme-light font-sans`}
       >
-        {children}
+        <Sidebar />
+        <div className="relative md:pl-64 flex flex-col flex-1">
+          <main className="flex-1">{children}</main>
+          <Toaster />
+        </div>
       </body>
     </html>
   );
